@@ -75,11 +75,11 @@ private sealed interface WebEvent {
 }
 
 /** JS -> Kotlin. Called on a WebView binder thread, so everything hops to main. */
-private class Bridge(private val init: String, @Volatile var style: String, private val onEvent: (WebEvent) -> Unit) {
+private class Bridge(private val init: String, @Volatile var currentStyle: String, private val onEvent: (WebEvent) -> Unit) {
     private val main = Handler(Looper.getMainLooper())
     private fun post(e: WebEvent) { main.post { onEvent(e) } }
     @JavascriptInterface fun getInit(): String = init
-    @JavascriptInterface fun getStyle(): String = style
+    @JavascriptInterface fun getStyle(): String = currentStyle
     @JavascriptInterface fun onReady(json: String) = post(WebEvent.Ready(json))
     @JavascriptInterface fun onRelocate(cfi: String, fraction: Double, chapter: String) = post(WebEvent.Relocate(cfi, fraction.toFloat(), chapter))
     @JavascriptInterface fun onTap(zone: String) = post(WebEvent.Tap(zone))
@@ -184,7 +184,7 @@ fun EbookReader(book: Book, s: Settings, onBack: () -> Unit) {
     }
 
     LaunchedEffect(style) {
-        bridge.style = style
+        bridge.currentStyle = style
         web.setBackgroundColor(colors.bg.toArgb())
         if (ready) js("folio.setStyle($style)")
     }
