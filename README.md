@@ -28,7 +28,8 @@ Point it at a folder and every book shows up with its cover. Read anything. Pick
 | Comics / manga | CBZ, ZIP, CBR, RAR (RAR4), CB7, 7Z, CBT, TAR | native pager with [Telephoto](https://github.com/saket/telephoto) zoom |
 | Plain | TXT, HTML | native |
 
-Not supported: DjVu, DRM-protected files (Kindle DRM, Adobe ADEPT), RAR5 comics (re-pack as CBZ).
+EPUB/MOBI/FB2 need a reasonably current **Android System WebView** (auto-updated from the Play Store on most phones); Folio tells you if yours is too old.
+Not supported: DjVu, plain PalmDOC `.prc`, DRM-protected files (Kindle DRM, Adobe ADEPT), RAR5 comics (re-pack as CBZ).
 
 ## Sync: how it works
 
