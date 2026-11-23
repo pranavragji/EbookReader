@@ -19,8 +19,9 @@ for node in re.findall(r"<node [^>]*>", s):
     t = " ".join(re.findall(r'(?:text|content-desc)="([^"]*)"', node))
     if sys.argv[1].lower() in t.lower():
         a, b, c, d = map(int, re.search(r'bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', node).groups())
-        print((a + c) // 2, (b + d) // 2)
-        break
+        if c > a and d > b:
+            print((a + c) // 2, (b + d) // 2)
+            break
 PY
 )
   if [ -n "$xy" ]; then adb shell input tap $xy; echo "tapped '$1' at $xy"; else echo "NOT FOUND: '$1'"; fi
