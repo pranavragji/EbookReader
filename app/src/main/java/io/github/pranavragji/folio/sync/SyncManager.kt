@@ -11,6 +11,7 @@ import io.github.pranavragji.folio.source.friendly
 import io.github.pranavragji.folio.source.json
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -106,8 +107,16 @@ class SyncManager(private val app: FolioApp) {
         }
     }
 
-    suspend fun syncNow(): Result<Unit> = lock.withLock {
-        val remote = remote(app.prefs.current().sync) ?: return Result.success(Unit)
+    /**
+     * Runs on the app scope, not the caller's: leaving the Sync screen mid-transfer must not abort a sync/upload
+     * (and its CancellationException must never be reported as a sync error). Callers just stop waiting.
+     */
+    private suspend fun <T> detached(block: suspend () -> T): T = app.scope.async { block() }.await()
+
+    suspend fun syncNow(): Result<Unit> = detached { syncLocked() }
+
+    private suspend fun syncLocked(): Result<Unit> = lock.withLock {
+        val remote = remote(app.prefs.current().sync) ?: return@withLock Result.success(Unit)
         _state.update { it.copy(running = true, error = null) }
         val result = runCatching {
             withContext(Dispatchers.IO) {
@@ -131,11 +140,11 @@ class SyncManager(private val app: FolioApp) {
     suspend fun cloudBooks(): List<RemoteBook> = remote(app.prefs.current().sync)?.listBooks() ?: emptyList()
 
     /** Download a cloud book into the local library. */
-    suspend fun download(book: RemoteBook): Book? {
-        val remote = remote(app.prefs.current().sync) ?: return null
+    suspend fun download(book: RemoteBook): Book? = detached {
+        val remote = remote(app.prefs.current().sync) ?: return@detached null
         val dest = File(app.downloadsDir, book.name.replace(Regex("[\\\\/:*?\"<>|]"), "_"))
         if (!dest.exists()) remote.download(book, dest)
-        return app.scanner.import(dest)
+        app.scanner.import(dest)
     }
 
     /** Filename the book will have in the cloud library. */
@@ -156,12 +165,14 @@ class SyncManager(private val app: FolioApp) {
     }
 
     /** Upload the book file to the user's cloud library so other devices can download it. */
-    suspend fun uploadBook(book: Book): Result<Unit> = runCatching {
-        val remote = remote(app.prefs.current().sync) ?: error("Connect Google Drive or WebDAV first")
-        val name = fileName(book)
-        if (remote.listBooks().any { it.name == name && (book.size == 0L || it.size == book.size) }) return@runCatching
-        val mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(book.format) ?: "application/octet-stream"
-        val size = if (book.size > 0) book.size else -1L
-        remote.upload(name, size, mime) { open(book) }
-    }.recoverCatching { throw Exception(it.friendly(), it) }
+    suspend fun uploadBook(book: Book): Result<Unit> = detached {
+        runCatching {
+            val remote = remote(app.prefs.current().sync) ?: error("Connect Google Drive or WebDAV first")
+            val name = fileName(book)
+            if (remote.listBooks().any { it.name == name && (book.size == 0L || it.size == book.size) }) return@runCatching
+            val mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(book.format) ?: "application/octet-stream"
+            val size = if (book.size > 0) book.size else -1L
+            remote.upload(name, size, mime) { open(book) }
+        }.recoverCatching { throw Exception(it.friendly(), it) }
+    }
 }

@@ -135,7 +135,8 @@ fun CloudScreen(nav: NavHostController) {
     LaunchedEffect(cfg.provider, cfg.webdavUrl, refresh) {
         cloud = null; cloudError = null
         if (cfg.provider != "none") runCatching { app.sync.cloudBooks() }
-            .onSuccess { cloud = it }.onFailure { cloudError = it.friendly() }
+            .onSuccess { cloud = it }
+            .onFailure { if (it is kotlinx.coroutines.CancellationException) throw it else cloudError = it.friendly() }
     }
 
     Scaffold(
