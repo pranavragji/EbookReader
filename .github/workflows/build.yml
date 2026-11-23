@@ -44,7 +44,7 @@ jobs:
           fi
 
       - name: Build
-        run: gradle :app:assembleRelease --stacktrace --console=plain
+        run: gradle :app:testReleaseUnitTest :app:assembleRelease --stacktrace --console=plain
 
       - run: cp app/build/outputs/apk/release/app-release.apk folio.apk
 
