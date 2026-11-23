@@ -37,10 +37,14 @@ adb install -r folio.apk
 adb logcat -c
 launch 6
 shot 00-first-run
-# Debug build: run-as can write into the app's own external dir (adb can't on Android 11+).
-adb push samples/. /data/local/tmp/samples/
-adb shell run-as $PKG sh -c "mkdir -p $DIR && cp /data/local/tmp/samples/* $DIR/"
-adb shell run-as $PKG ls -la $DIR
+# Android 11+ blocks adb from the app's external dir; google_apis images allow adb root, so write it directly.
+adb root >/dev/null; sleep 3; adb wait-for-device
+REAL=/data/media/0/Android/data/$PKG/files
+adb shell mkdir -p $REAL/books
+adb push samples/. $REAL/books/
+OWNER=$(adb shell stat -c %u:%g $REAL | tr -d '')
+adb shell chown -R $OWNER $REAL/books
+adb shell ls -la $REAL/books
 launch 12
 shot 01-library
 
