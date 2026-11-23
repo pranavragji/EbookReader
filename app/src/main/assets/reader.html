@@ -9,6 +9,11 @@
 </style>
 </head>
 <body>
+<script>
+  // foliate-js needs a modern engine (private methods, ?., ??). Old system WebViews would otherwise hang silently.
+  try { new Function('class A { #m() {} } let a; return a?.b ?? 1') }
+  catch (e) { Android.onError('Your Android System WebView is too old to open this book. Update "Android System WebView" (or Chrome) from the Play Store and try again.') }
+</script>
 <script type="module" src="folio.js"></script>
 </body>
 </html>

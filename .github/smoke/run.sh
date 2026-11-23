@@ -24,21 +24,29 @@ for node in re.findall(r"<node [^>]*>", s):
             break
 PY
 )
-  if [ -n "$xy" ]; then adb shell input tap $xy; echo "tapped '$1' at $xy"; else echo "NOT FOUND: '$1'"; fi
+  if [ -n "$xy" ]; then adb shell input tap $xy; echo "tapped '$1' at $xy"; return 0; fi
+  return 1
+}
+# Find-and-tap, scrolling down up to 3 times.
+find_tap() {
+  for _ in 1 2 3 4; do tap_text "$1" && return 0; adb shell input swipe 540 1700 540 700 300; sleep 1; done
+  echo "NOT FOUND: '$1'"
 }
 
 adb install -r folio.apk
 adb logcat -c
 launch 6
 shot 00-first-run
-adb shell mkdir -p $DIR
-adb push samples/. $DIR/
+# Debug build: run-as can write into the app's own external dir (adb can't on Android 11+).
+adb push samples/. /data/local/tmp/samples/
+adb shell run-as $PKG sh -c "mkdir -p $DIR && cp /data/local/tmp/samples/* $DIR/"
+adb shell run-as $PKG ls -la $DIR
 launch 12
 shot 01-library
 
 for title in "smoke novel" "smoke manga" "smoke doc" "smoke notes"; do
   slug=${title// /-}
-  tap_text "$title"; sleep 8; shot "10-$slug"
+  find_tap "$title"; sleep 8; shot "10-$slug"
   adb shell input tap 540 1200; sleep 2; shot "11-$slug-chrome"
   adb shell input keyevent KEYCODE_BACK; sleep 1
   launch 8

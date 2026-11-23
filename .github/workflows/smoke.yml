@@ -18,7 +18,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.11.1
-      - run: gradle :app:assembleRelease --console=plain && cp app/build/outputs/apk/release/app-release.apk folio.apk
+      - run: gradle :app:assembleDebug --console=plain && cp app/build/outputs/apk/debug/app-debug.apk folio.apk
       - run: python3 .github/smoke/make_samples.py samples
       - name: Enable KVM
         run: |
@@ -27,7 +27,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
       - uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 29
+          api-level: 34
           arch: x86_64
           target: google_apis
           profile: pixel_5
