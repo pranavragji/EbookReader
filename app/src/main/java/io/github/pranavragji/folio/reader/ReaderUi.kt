@@ -74,19 +74,23 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import io.github.pranavragji.folio.app
 import io.github.pranavragji.folio.data.Settings
+import io.github.pranavragji.folio.ui.theme.readerPalette
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 /** Page colours for text readers. "auto" follows the system. */
 data class ReaderColors(val name: String, val bg: Color, val fg: Color, val link: Color, val dark: Boolean)
 
-fun readerColors(theme: String, systemDark: Boolean): ReaderColors =
-    when (if (theme == "auto") (if (systemDark) "dark" else "light") else theme) {
-        "sepia" -> ReaderColors("sepia", Color(0xFFF4ECD8), Color(0xFF5B4636), Color(0xFF8A5A2B), false)
-        "dark" -> ReaderColors("dark", Color(0xFF1B1B1D), Color(0xFFDCDCDC), Color(0xFF9DB7FF), true)
-        "black" -> ReaderColors("black", Color(0xFF000000), Color(0xFFC4C4C4), Color(0xFF8FA8E8), true)
-        else -> ReaderColors("light", Color(0xFFFFFFFF), Color(0xFF1F1F1F), Color(0xFF2A5DB0), false)
+/** Page/ink come from the design palette so the Settings preview matches the reader exactly. */
+fun readerColors(theme: String, systemDark: Boolean): ReaderColors {
+    val p = readerPalette(theme, systemDark)
+    return when (p.id) {
+        "sepia" -> ReaderColors("sepia", p.page, p.ink, Color(0xFF8A5A2B), false)
+        "dark" -> ReaderColors("dark", p.page, p.ink, Color(0xFF9DB7FF), true)
+        "black" -> ReaderColors("black", p.page, p.ink, Color(0xFF8FA8E8), true)
+        else -> ReaderColors("light", p.page, p.ink, Color(0xFF2A5DB0), false)
     }
+}
 
 fun Color.hex(): String = "#%06X".format(0xFFFFFF and (value shr 32).toInt())
 
