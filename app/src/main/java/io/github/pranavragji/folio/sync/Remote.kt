@@ -102,7 +102,14 @@ object GoogleAuth {
         return r.accessToken ?: throw IOException("Google didn't return an access token")
     }
 
-    fun explain(t: Throwable): String = when ((t as? ApiException)?.statusCode) {
+    fun explain(t: Throwable): String = when {
+        t.message?.contains("UNREGISTERED_ON_API_CONSOLE") == true ->
+            "Google doesn't recognise this app yet. A newly created OAuth client can take up to a few hours " +
+                "to activate; otherwise check its package name and SHA-1 (see README)."
+        else -> explainCode(t)
+    }
+
+    private fun explainCode(t: Throwable): String = when ((t as? ApiException)?.statusCode) {
         CommonStatusCodes.DEVELOPER_ERROR ->
             "Google sign-in isn't set up for this build. Register an Android OAuth client for " +
                 "io.github.pranavragji.folio with the release SHA-1 (see README), or use WebDAV."
